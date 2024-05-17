@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>iGarment Translation</title>
+    <link href="/static/css/style.css" rel="stylesheet" />
+
+    <style>
+        pre{
+            font-size: 15px;
+        }
+        button{
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        #loading-spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loading-overlay" style="display: none;">
+        <div id="loading-spinner"></div>
+    </div>
+    <div class="container">
+        <h2>Upload a Input Text File To translate</h2>
+
+        <form id="uploadForm" method="post" enctype="multipart/form-data">
+            <input type="file" id="fileInput" name="file">
+            <button type="button" id="processBtn">Process Translation</button>
+        </form>
+        <br>
+        <i>Currently <b>'syrremk_new_add reason column.xls'</b> has been used for matching the sentences.</i>
+
+        <h5>Input text</h5>
+        <div style="background-color: rgb(143, 154, 154); border: 1px solid #444;">
+            <pre id="input_text" style="padding: 10px;">
+
+        </pre>
+        </div>
+
+        <h5>Translated text</h5>
+        <div style="background-color: rgb(143, 154, 154); border: 1px solid #444;">
+            <pre id="translated_text" style="padding: 10px;">
+
+        </pre>
+        </div>
+
+        <h5>Process logs</h5>
+        <div style="background-color: rgb(143, 154, 154); border: 1px solid #444;">
+            <pre id="logs" style="padding: 10px;">
+
+        </pre>
+        </div>
+    </div>
+    <script>
+        const fileInput = document.getElementById("fileInput");
+        const processBtn = document.getElementById("processBtn")
+
+        fileInput.addEventListener("change", function () {
+            const file = fileInput.files[0];
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            fetch("/upload", {
+                method: "POST",
+                body: formData,
+            })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                return response.json();
+            })
+            .then((data) => {
+                console.log(data);
+                document.getElementById('input_text').textContent = data.content
+            })
+            .catch((error) => {
+                console.error("Error in uploading file: ", error);
+            });
+        });
+
+        processBtn.addEventListener('click', function () {
+            const file = fileInput.files[0];
+            if(file){
+                const formData = new FormData();
+                formData.append("file", file);
+                document.getElementById('loading-overlay').style.display = 'flex';
+
+                fetch("/process", {
+                    method: "POST",
+                    body: formData,
+                })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    console.log(data);
+                    document.getElementById('translated_text').textContent = data.content
+                    document.getElementById('logs').textContent = data.logs
+                    document.getElementById('loading-overlay').style.display = 'none';
+                })
+                .catch((error) => {
+                    console.error("Error in processing: ", error);
+                });
+            }
+        })
+    </script>
+</body>
+
+</html>

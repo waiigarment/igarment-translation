@@ -1,0 +1,6 @@
+cherrypy
+storm
+pandas
+spacy
+xlrd
+python-dotenv
