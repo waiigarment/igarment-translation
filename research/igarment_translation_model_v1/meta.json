@@ -1,0 +1,43 @@
+{
+  "lang":"ja",
+  "name":"pipeline",
+  "version":"0.0.0",
+  "spacy_version":">=3.7.4,<3.8.0",
+  "description":"",
+  "author":"",
+  "email":"",
+  "url":"",
+  "license":"",
+  "spacy_git_version":"bff8725f4",
+  "vectors":{
+    "width":0,
+    "vectors":0,
+    "keys":0,
+    "name":null,
+    "mode":"default"
+  },
+  "labels":{
+    "sentencizer":[
+
+    ],
+    "entity_ruler":[
+      "GARMENT_TERM",
+      "WORKER_NAME"
+    ]
+  },
+  "pipeline":[
+    "sentencizer",
+    "translation_component",
+    "garment_lemmatizer",
+    "entity_ruler"
+  ],
+  "components":[
+    "sentencizer",
+    "translation_component",
+    "garment_lemmatizer",
+    "entity_ruler"
+  ],
+  "disabled":[
+
+  ]
+}
