@@ -10,23 +10,113 @@ class TranslationComponent:
         # print('init ...................')
         self.translation_dict = translation_dict
 
+    # def __call__(self, doc):
+    #     translated_sentences = []
+        
+    #     for sent in doc.sents:
+    #         sentence = sent.text.strip()
+    #         print('sentence ', sentence)
+    #         if sentence in self.translation_dict:
+    #             translated = self.translation_dict[sentence]
+    #             sent._.translated_with_chatgpt = False
+    #         else:
+    #             translated = translate_with_openai(sentence)
+    #             sent._.translated_with_chatgpt = True
+    #         translated_sentences.append(translated)
+    #         sent._.translated_text = translated
+
+    #     # doc._.translated_text = '\n'.join(translated_sentences)
+    #     return doc
     def __call__(self, doc):
         translated_sentences = []
-        
-        for sent in doc.sents:
-            sentence = sent.text.strip()
-            sent
+        sentences = [sent for sent in doc.sents if sent.text.strip() and not all(char in '、' for char in sent.text.strip())]
+        n = len(sentences)
+
+        i = 0
+        while i < n:
+            sentence = sentences[i].text.strip()
             # print('sentence ', sentence)
+            # First, check if the sentence itself is in the translation dictionary
             if sentence in self.translation_dict:
                 translated = self.translation_dict[sentence]
-                sent._.translated_with_chatgpt = False
+                sentences[i]._.translated_with_chatgpt = False                
             else:
-                translated = translate_with_openai(sentence)
-                sent._.translated_with_chatgpt = True
-            translated_sentences.append(translated)
-            sent._.translated_text = translated
+                combined_sentence = None
+                combined_translation = None
 
-        # doc._.translated_text = '\n'.join(translated_sentences)
+                # Try to combine with the next sentence
+                if i + 1 < n:
+                    combined_sentence_list = [
+                        sentence + ' ' + sentences[i + 1].text.strip(),
+                        sentence + '、' + sentences[i + 1].text.strip(),
+                        sentence + ' 、' + sentences[i + 1].text.strip(),
+                        
+                        sentence + ' ' + sentences[i + 1].text.strip().rstrip('、'),
+                        sentence + ' ' + sentences[i + 1].text.strip().lstrip('、'),
+                        
+                        sentence.rstrip('、') + ' ' + sentences[i + 1].text.strip().rstrip('、'),
+                        sentence.rstrip('、') + ' ' + sentences[i + 1].text.strip().lstrip('、'),
+                        
+                        sentence.lstrip('、') + ' ' + sentences[i + 1].text.strip().rstrip('、'),
+                        sentence.lstrip('、') + ' ' + sentences[i + 1].text.strip().lstrip('、'),
+                    ]
+                    # combined_sentence = sentence + ' ' + sentences[i + 1].text.strip()
+                    for e in combined_sentence_list:
+                        # print('combined_sentence with next', e)
+                        if e in self.translation_dict:
+                            combined_sentence = e
+                            sentences[i]._.combined_sentence = combined_sentence
+                            
+                            combined_translation = self.translation_dict[combined_sentence]
+                            sentences[i]._.translated_with_chatgpt = False
+                            sentences[i]._.translated_with_chatgpt = False
+                            sentences[i]._.translated_text = combined_translation
+                            sentences[i]._.combined_translated_text = combined_translation
+                            translated = combined_translation
+                            i += 1  # Skip the next sentence
+                        
+                        
+                # Try to combine with the previous sentence if no combined translation found with next
+                if combined_translation is None and i - 1 >= 0:
+                    # combined_sentence = sentences[i - 1].text.strip() + ' ' + sentence
+                    combined_sentence_list = [
+                        sentences[i - 1].text.strip() + ' ' + sentence,
+                        sentences[i - 1].text.strip() + '、' + sentence,
+                        sentences[i - 1].text.strip() + ' 、' + sentence,
+                        
+                        sentences[i - 1].text.strip() + ' ' + sentence.rstrip('、'),
+                        sentences[i - 1].text.strip() + ' ' + sentence.lstrip('、'),
+                        
+                        sentences[i - 1].text.strip().rstrip('、') + ' ' + sentence.rstrip('、'),
+                        sentences[i - 1].text.strip().rstrip('、') + ' ' + sentence.lstrip('、'),
+                        
+                        sentences[i - 1].text.strip().lstrip('、') + ' ' + sentence.rstrip('、'),
+                        sentences[i - 1].text.strip().lstrip('、') + ' ' + sentence.lstrip('、'),
+
+                    ]
+                    for e in combined_sentence_list:
+                        # print('combined_sentence with previous', e)
+                        if e in self.translation_dict:
+                            combined_sentence  = e
+                            sentences[i]._.combined_sentence = combined_sentence
+                            
+                            combined_translation = self.translation_dict[combined_sentence]
+                            sentences[i]._.translated_with_chatgpt = False
+                            sentences[i]._.translated_with_chatgpt = False
+                            sentences[i]._.translated_text = combined_translation
+                            sentences[i]._.combined_translated_text = combined_translation
+                            # Update the previous sentence translation and skip setting for current sentence
+                            translated = combined_translation
+
+                if combined_translation is None:
+                    # Translate separately if no combined translation found
+                    translated = translate_with_openai(sentence)
+                    sentences[i]._.translated_with_chatgpt = True
+
+            translated_sentences.append(translated)
+            sentences[i]._.translated_text = translated
+            i += 1
+
         return doc
 
     def add_translation(self, original, translated):
@@ -47,6 +137,12 @@ class TranslationComponent:
 if not Span.has_extension("translated_text"):
     Span.set_extension("translated_text", default=None)
 
+if not Span.has_extension("combined_sentence"):
+    Span.set_extension("combined_sentence", default=None)
+    
+if not Span.has_extension("combined_translated_text"):
+    Span.set_extension("combined_translated_text", default=None)
+    
 if not Span.has_extension("translated_with_chatgpt"):
     Span.set_extension("translated_with_chatgpt", default=None)
     

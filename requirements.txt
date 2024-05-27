@@ -4,3 +4,4 @@ pandas
 spacy
 xlrd
 python-dotenv
+openpyxl

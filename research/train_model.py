@@ -3,6 +3,7 @@ import pandas as pd
 # need to load these modules for defining and registering translation component
 from translation_component import TranslationComponent, create_translation_component
 from garment_lemmatizer import GarmentLemmatizer, create_garment_lemmatizer
+from spacy.language import Language
 
 def load_excel_file(file_path):
     df = pd.read_excel(file_path, engine='xlrd')
@@ -51,7 +52,17 @@ punct_chars = [
  '\n',
  ]
 
+@Language.component("custom_boundaries")
+def set_custom_boundaries(doc):
+    for token in doc[:-1]:
+        if token.text == '\n' and doc[token.i + 1].text in '、。？，,':
+            token.is_sent_start = False
+            doc[token.i + 1].is_sent_start = True
+    return doc
+
 nlp.add_pipe("sentencizer", config={'punct_chars': punct_chars}, first=True)
+
+nlp.add_pipe("custom_boundaries", after='sentencizer')
 
 # Add the custom translation component to the pipeline
 nlp.add_pipe("translation_component", last=True)

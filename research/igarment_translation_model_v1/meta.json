@@ -27,12 +27,14 @@
   },
   "pipeline":[
     "sentencizer",
+    "custom_boundaries",
     "translation_component",
     "garment_lemmatizer",
     "entity_ruler"
   ],
   "components":[
     "sentencizer",
+    "custom_boundaries",
     "translation_component",
     "garment_lemmatizer",
     "entity_ruler"
